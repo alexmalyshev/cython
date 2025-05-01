@@ -1,0 +1,47 @@
+# tag: cpp
+
+"""
+PYTHON setup.py build_ext --inplace
+PYTHON -c "from cpp_template_overload import test; test()"
+"""
+
+######## setup.py ########
+
+from distutils.core import setup
+from Cython.Build import cythonize
+setup(ext_modules=cythonize('*.pyx', language='c++'))
+
+######## c.h ########
+
+class C {
+public:
+  C() = default;
+
+  bool func() const {
+    return true;
+  }
+
+  template <class T>
+  bool func() const {
+    return false;
+  }
+};
+
+######## c.pxd ########
+
+from libcpp cimport bool as cbool
+
+cdef extern from "c.h" nogil:
+    cdef cppclass C:
+        C()
+        cbool func[T]()
+        cbool func()
+
+######## cpp_template_overload.pyx ########
+
+from c cimport C
+
+def test():
+    obj = C()
+    assert obj.func()
+    assert not obj.func[int]()
